@@ -10,7 +10,7 @@ __revision__ = "$Id$"
 __version__ = "1.2"
 
 __all__ = ['Publisher',
-           'get_publisher', 'get_request', 'get_session', 'get_user',
+           'get_publisher', 'get_request', 'get_session', 'get_user', 'get_cookie', 'get_response',
            'get_path', 'enable_ptl', 'redirect']
 
 
@@ -18,7 +18,7 @@ __all__ = ['Publisher',
 # to get at.
 from quixote.publish import Publisher, \
      get_publisher, get_request, get_path, redirect, \
-     get_session, get_session_manager, get_user
+     get_session, get_session_manager, get_user, get_cookie, get_response
 
 # Can't think of anywhere better to put this, so here it is.
 def enable_ptl():
