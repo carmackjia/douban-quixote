@@ -30,9 +30,6 @@
 #
 #------------------------------------------------------------------------
 
-__revision__ = "$Id$"
-
-
 import  os, sys, string, socket, errno, struct
 from    cStringIO   import StringIO
 import  cgi

@@ -2,9 +2,6 @@
 TemplateIO.
 """
 
-#$HeadURL: svn+ssh://svn/repos/trunk/quixote/_py_htmltext.py $
-#$Id$
-
 import sys
 from types import UnicodeType, TupleType, StringType, IntType, FloatType, \
     LongType
@@ -191,7 +188,7 @@ def htmlescape(s):
     if classof(s) is htmltext:
         return s
     elif isinstance(s,  UnicodeType):
-        s = s.encode('iso-8859-1')
+        s = s.encode('utf8')
     else:
         s = str(s)
     # inline _escape_string for speed

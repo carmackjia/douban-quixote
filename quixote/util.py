@@ -1,6 +1,4 @@
 """quixote.util
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/util.py $
-$Id$
 
 Contains various useful functions and classes:
 
@@ -17,7 +15,6 @@ See doc/static-files.txt for examples of their use.
 
 import sys
 import os
-import re
 import time
 import binascii
 import mimetypes
@@ -250,8 +247,8 @@ class StaticDirectory:
         out = StringIO()
         if self.list_directory:
             template = html.htmltext('<a href="%s">%s</a>%s')
-            print >>out, (html.htmltext("<h1>%s</h1>")
-                          % request.environ['REQUEST_URI'])
+            print >>out, (html.htmltext("<h1>Index of %s</h1>")
+                          % request.get_path())
             print >>out, "<pre>"
             print >>out, template % ('..', '..', '')
             files = os.listdir(self.path)
@@ -325,42 +322,3 @@ class Redirector:
 
     def __call__(self, request):
         return request.redirect(self.location, self.permanent)
-
-re_xml_illegal = u'[\u000b\u000c\u00a0\u00ad\u0337\u0338\u115f\u1160\u205f\u3164\ufeff\uffa0\u0000-\u0008\u000e-\u001f\u0080-\u009f\u2000-\u200f\u202a-\u202f\u206a-\u206f\ufff9-\ufffb\ufffe-\uffff]'
-
-CONTROL_RE = re.compile(re_xml_illegal)
-def filter_input(s):
-    """filter all the illegal and a few invisible control char in unicode xml charset.
-
-    def compare_func(s):
-        return s.decode('utf8', 'ignore').encode('utf8','ignore')
-
-    speed:
-        compare_func:  254,359,978 char/second
-        filter_input:   70,416,666 char/second
-        test_input: a utf-8 str include bad_unicode char, length 10647
-    """
-    return CONTROL_RE.sub('',s.decode('utf8', 'ignore')).encode('utf8','ignore')
-
-def convert_unicode_to_utf8_in_json(json):
-    def _do_transform(val):
-        mapper = {
-            unicode: lambda x: x.encode('utf-8'),
-            list: lambda x: _transform_list(x),
-            dict: lambda x: _transform_dict(x),
-        }
-        type_ = type(val)
-
-        return mapper[type_](val) if type_ in mapper else val
-
-    def _transform_dict(old_di):
-        new_dict = {}
-        for old_k, old_v in old_di.iteritems():
-            new_k = old_k.encode('utf-8') if type(old_k) is unicode else old_k
-            new_dict[new_k] = _do_transform(old_v)
-        return new_dict
-
-    def _transform_list(li):
-        return [_do_transform(i) for i in li]
-
-    return _do_transform(json)

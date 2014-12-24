@@ -1,7 +1,4 @@
-"""$URL: svn+ssh://svn/repos/trunk/quixote/form2/__init__.py $
-$Id$
-
-The web interface framework, consisting of Form and Widget base classes
+"""The web interface framework, consisting of Form and Widget base classes
 (and a bunch of standard widget classes recognized by Form).
 Application developers will typically create a Form instance each
 form in their application; each form object will contain a number

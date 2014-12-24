@@ -1,6 +1,4 @@
 """quixote.http_response
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/http_response.py $
-$Id$
 
 Provides the HTTPResponse class.
 
@@ -20,8 +18,6 @@ copyright and license from the rest of Quixote).
 # FOR A PARTICULAR PURPOSE
 #
 ##############################################################################
-
-__revision__ = "$Id$"
 
 import time
 from rfc822 import formatdate
@@ -211,7 +207,7 @@ class HTTPResponse:
             self.body = str(body)
             self.set_header('content-length', len(self.body))
         if not self.headers.has_key('content-type'):
-            self.set_header('content-type', 'text/html; charset=iso-8859-1')
+            self.set_header('content-type', 'text/html; charset=utf-8')
 
     def expire_cookie(self, name, **attrs):
         """
@@ -311,8 +307,6 @@ class HTTPResponse:
                     chunks.append("%s=%s" % (name, val))
                 elif name == 'secure' and val:
                     chunks.append("secure")
-                elif name == 'httponly' and val:
-                    chunks.append("httponly")
 
             cookie_list.append(("Set-Cookie", ("; ".join(chunks))))
 

@@ -1,6 +1,4 @@
 """quixote.ptl_import
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/ptl_import.py $
-$Id$
 
 Import hooks; when installed, these hooks allow importing .ptl files
 as if they were Python modules.
@@ -10,16 +8,11 @@ trickery and the import hooks here.  Bottom line: if you're using ZODB,
 import it *before* installing the Quixote/PTL import hooks.
 """
 
-__revision__ = "$Id$"
-
-
 import sys
 import os.path
 import imp, ihooks, new
 import marshal
 import stat
-import fcntl
-import errno
 import __builtin__
 
 from ptl_compile import compile_template, PTL_EXT, PTLC_EXT, PTLC_MAGIC
@@ -67,17 +60,8 @@ def _load_ptl(name, filename, file=None):
     path, ext = os.path.splitext(filename)
     ptlc_filename = path + PTLC_EXT
     try:
-        output_fd = os.open(ptlc_filename, os.O_WRONLY | os.O_CREAT, 0644)
-        try:
-            fcntl.flock(output_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except IOError, e:
-            if e.errno == errno.EWOULDBLOCK:
-                fcntl.flock(output_fd, fcntl.LOCK_EX)
-                os.close(output_fd)
-                return _load_ptlc(name, ptlc_filename)
-            raise
-        output = os.fdopen(output_fd, 'wb')
-    except (OSError, IOError), e:
+        output = open(ptlc_filename, "wb")
+    except IOError, msg:
         output = None
     try:
         code = compile_template(file, filename, output)

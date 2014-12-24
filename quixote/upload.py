@@ -1,14 +1,10 @@
 """quixote.upload
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/upload.py $
-$Id$
 
 Code for handling HTTP upload requests.  Provides HTTPUploadRequest, a
 subclass of HTTPRequest that is created when handling an HTTP request
 whose Content-Type is "multipart/form-data".  Also provides the Upload
 class, which is used as the form value for "file upload" variables.
 """
-
-__revision__ = "$Id$"
 
 import os, string
 import errno
@@ -78,9 +74,6 @@ def read_mime_part(file, boundary, lines=None, ofile=None):
             return 0
         elif line == last:         # final boundary -- no more to read
             return 1
-        elif line == "Submit Query" and file.still_need(last): # workaround for flash upload
-            file.finish()
-            return 1
 
         if lines is not None:
             lines.append(line)
@@ -102,8 +95,6 @@ def make_safe(s):
 
     return s.translate(_safe_trans)
 
-# file upload counter, in case different thread in same process get same filename
-counter = 0
 
 class Upload:
     """
@@ -170,11 +161,9 @@ class Upload:
         except AttributeError:
             pass
         tstamp = strftime("%Y%m%d.%H%M%S", localtime(time()))
-        pid = os.getpid()
-        global counter
-        counter += 1
+        counter = 0
         while 1:
-            filename = "upload.%s_%s_%s" % (pid, tstamp, counter)
+            filename = "upload.%s.%s" % (tstamp, counter)
             filename = os.path.join(dir, filename)
             try:
                 fd = os.open(filename, flags)
@@ -208,17 +197,15 @@ class Upload:
         stats = os.stat(self.tmp_filename)
         return stats.st_size
 
-
 class CountingFile:
     """A file-like object that records the number of bytes read
     from the underlying file.  Ignores seek(), because it's only
     used by HTTPUploadRequest on an unseekable file (stdin).
     """
 
-    def __init__(self, file, length):
+    def __init__(self, file):
         self.__file = file
         self.__bytesread = 0
-        self.__length = int(length)
 
     def read(self, nbytes):
         data = self.__file.read(nbytes)
@@ -232,12 +219,6 @@ class CountingFile:
 
     def get_bytesread(self):
         return self.__bytesread
-
-    def finish(self):
-        self.__bytesread = self.__length
-
-    def still_need(self, str):
-        return self.__bytesread + len(str) == self.__length
 
 
 class HTTPUploadRequest(HTTPRequest):
@@ -379,7 +360,7 @@ class HTTPUploadRequest(HTTPRequest):
 
         # The meat of the body starts after the first occurrence of
         # the boundary, so read up to that point.
-        file = CountingFile(self.stdin, self.get_header("Content-Length"))
+        file = CountingFile(self.stdin)
         read_mime_part(file, boundary)
 
         # Parse the parts of the message, ie. the form variables.  Some of

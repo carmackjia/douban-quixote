@@ -4,10 +4,6 @@ Provides the basic web widget classes: Widget itself, plus StringWidget,
 TextWidget, CheckboxWidget, etc.
 """
 
-# created 2000/09/20, GPW
-
-__revision__ = "$Id$"
-
 import struct
 from types import FloatType, IntType, ListType, StringType, TupleType
 from quixote import get_request

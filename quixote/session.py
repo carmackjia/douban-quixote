@@ -1,6 +1,4 @@
 """quixote.session
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/session.py $
-$Id$
 
 Quixote session management.  There are two levels to Quixote's
 session management system:

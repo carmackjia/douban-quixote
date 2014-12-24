@@ -3,8 +3,6 @@
 # Application code for the Quixote session management demo.
 # Driver script is session_demo.cgi.
 
-__revision__ = "$Id: session.ptl 23532 2004-02-20 22:38:57Z dbinger $"
-
 from quixote import get_session_manager
 from quixote.errors import QueryError
 

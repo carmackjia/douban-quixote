@@ -1,6 +1,4 @@
 """quixote.mod_python_handler
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/mod_python_handler.py $
-$Id$
 
 mod_python handler for Quixote.  See the "mod_python configuration"
 section of doc/web-server.txt for details.

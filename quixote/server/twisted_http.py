@@ -1,10 +1,7 @@
 #!/usr/bin/env python
-
 """
 twist -- Demo of an HTTP server built on top of Twisted Python.
 """
-
-__revision__ = "$Id$"
 
 # based on qserv, created 2002/03/19, AMK
 # last mod 2003.03.24, Graham Fawcett
@@ -44,7 +41,14 @@ class QuixoteTWRequest(server.Request):
         resp = qxrequest.response
         self.setResponseCode(resp.status_code)
         for hdr, value in resp.generate_headers():
-            self.setHeader(hdr, value)
+            if hdr != 'Set-Cookie':
+                self.setHeader(hdr, value)
+        # Cookies get special treatment since it seems Twisted cannot handle
+        # multiple Set-Cookie headers.
+        for name, attrs in resp.cookies.items():
+            attrs = attrs.copy()
+            value = attrs.pop('value')
+            self.addCookie(name, value, **attrs)
         if resp.body is not None:
             TWProducer(resp.body, self)
         else:
@@ -88,13 +92,17 @@ class QuixoteTWRequest(server.Request):
                "SCRIPT_FILENAME":   '',
                "REQUEST_URI":       self.uri,
                "HTTPS":             (self.isSecure() and 'on') or 'off',
-               "ACCEPT_ENCODING":   self.getHeader('Accept-encoding'),
-               'CONTENT_TYPE':      self.getHeader('Content-type'),
-               'HTTP_COOKIE':       self.getHeader('Cookie'),
-               'HTTP_REFERER':      self.getHeader('Referer'),
-               'HTTP_USER_AGENT':   self.getHeader('User-agent'),
                'SERVER_PROTOCOL':   'HTTP/1.1',
         }
+
+	for env_var, header in [('ACCEPT_ENCODING', 'Accept-encoding'),
+				('CONTENT_TYPE', 'Content-type'),
+				('HTTP_COOKIE', 'Cookie'),
+				('HTTP_REFERER', 'Referer'),
+				('HTTP_USER_AGENT', 'User-agent')]:
+	    value = self.getHeader(header)
+	    if value is not None:
+	        env[env_var] = value
 
         client = self.getClient()
         if client is not None:

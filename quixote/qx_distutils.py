@@ -1,6 +1,4 @@
 """quixote.qx_distutils
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/qx_distutils.py $
-$Id$
 
 Provides a version of the Distutils "build_py" command that knows about
 PTL files.
@@ -8,10 +6,6 @@ PTL files.
 This is installed with Quixote so other Quixote apps can use it in their
 setup scripts.
 """
-
-# created 2001/08/28, Greg Ward (initially written for SPLAT!'s setup.py)
-
-__revision__ = "$Id$"
 
 import os, string
 from glob import glob

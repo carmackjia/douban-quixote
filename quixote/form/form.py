@@ -4,8 +4,6 @@ Provides the Form class and bureaucracy for registering widget classes.
 (The standard widget classes are registered automatically.)
 """
 
-__revision__ = "$Id$"
-
 from types import StringType
 from quixote import get_session, get_publisher
 from quixote.html import url_quote, htmltag, htmltext, nl2br, TemplateIO

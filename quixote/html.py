@@ -1,6 +1,4 @@
 """Various functions for dealing with HTML.
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/html.py $
-$Id$
 
 These functions are fairly simple but it is critical that they be
 used correctly.  Many security problems are caused by quoting errors
@@ -54,8 +52,6 @@ treat it as an invalid entity reference.
 
 """
 
-__revision__ = "$Id$"
-
 import urllib
 from types import UnicodeType
 
@@ -79,7 +75,7 @@ def htmltag(tag, xml_end=0, css_class=None, **attrs):
         if val is ValuelessAttr:
             val = attr
         if val is not None:
-            r.append(' %s="%s"' % (attr, _escape_string(str(val))))
+            r.append(' %s="%s"' % (attr, htmlescape(val)))
     if xml_end:
         r.append(" />")
     else:
@@ -116,7 +112,7 @@ def url_quote(value, fallback=None):
         else:
             return fallback
     if isinstance(value,  UnicodeType):
-        value = value.encode('iso-8859-1')
+        value = value.encode('utf8')
     else:
         value = str(value)
     return urllib.quote(value)
@@ -142,7 +138,7 @@ def html_quote(value, fallback=None):
         else:
             return fallback
     elif isinstance(value,  UnicodeType):
-        value = value.encode('iso-8859-1')
+        value = value.encode('utf8')
     else:
         value = str(value)
     value = value.replace("&", "&amp;") # must be done first

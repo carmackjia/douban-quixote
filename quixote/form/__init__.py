@@ -8,10 +8,6 @@ of widget objects.  Custom widgets can be created by inheriting
 and/or composing the standard widget classes.
 """
 
-# created 2000/09/19 - 22, GPW
-
-__revision__ = "$Id$"
-
 from quixote.form.form import Form, register_widget_class, FormTokenWidget
 from quixote.form.widget import Widget, StringWidget, FileWidget, \
      PasswordWidget, TextWidget, CheckboxWidget, RadiobuttonsWidget, \

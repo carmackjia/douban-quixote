@@ -5,8 +5,6 @@ dumppyc.py script in the Tools/compiler directory of the Python
 distribution.
 """
 
-__revision__ = "$Id$"
-
 import marshal
 import dis
 import types

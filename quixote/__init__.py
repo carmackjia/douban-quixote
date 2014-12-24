@@ -1,17 +1,14 @@
 """quixote
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/__init__.py $
-$Id$
 
 A highly Pythonic web application framework.
 """
 
-__revision__ = "$Id$"
-
-__version__ = "1.2"
+__version__ = "1.3"
 
 __all__ = ['Publisher',
-           'get_publisher', 'get_request', 'get_session', 'get_user', 'get_cookie', 'get_response',
-           'get_path', 'enable_ptl', 'redirect']
+           'get_publisher', 'get_request', 'get_session', 'get_user',
+           'get_path', 'enable_ptl', 'redirect', 
+           'get_cookie', 'get_response']
 
 
 # These are frequently needed by Quixote applications, so make them easy

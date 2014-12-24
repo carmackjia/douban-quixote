@@ -1,12 +1,8 @@
 """quixote.errors
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/errors.py $
-$Id$
 
 Exception classes used by Quixote
 """
 from quixote.html import htmltext, htmlescape
-
-__revision__ = "$Id$"
 
 
 class PublishError(Exception):

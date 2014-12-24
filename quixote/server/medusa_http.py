@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-
 """quixote.server.medusa_http
 
 An HTTP handler for Medusa that publishes a Quixote application.
 """
-
-__revision__ = "$Id$"
 
 # A simple HTTP server, using Medusa, that publishes a Quixote application.
 

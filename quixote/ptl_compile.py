@@ -1,7 +1,4 @@
 #!/www/python/bin/python
-#$HeadURL: svn+ssh://svn/repos/trunk/quixote/ptl_compile.py $
-#$Id$
-
 """
 Compile a PTL template.
 
@@ -13,8 +10,6 @@ package.
 
 Note that script/module requires the compiler package.
 """
-
-__revision__ = "$Id$"
 
 import sys
 import os
@@ -61,7 +56,6 @@ class TemplateTransformer(transformer.Transformer):
         else:
             io_imp = ast.From(IO_MODULE, [(IO_CLASS, None)])
             markup_imp = ast.From(MARKUP_MODULE, [(MARKUP_CLASS, None)])
-
         markup_assign = ast.Assign([ast.AssName(MARKUP_MANGLED_CLASS,
                                                 OP_ASSIGN)],
                                    ast.Name(MARKUP_CLASS))
@@ -72,12 +66,20 @@ class TemplateTransformer(transformer.Transformer):
         io_assign_name = ast.AssName(IO_INSTANCE, OP_ASSIGN)
         io_assign = ast.Assign([io_assign_name], io_instance)
 
-        stmts = [ io_imp, io_assign, markup_imp, markup_assign ]
-
+        ptl_stmts = [ io_imp, io_assign, markup_imp, markup_assign ]
+        stmts = []
         for node in nodelist:
             if node[0] != token.ENDMARKER and node[0] != token.NEWLINE:
                 self.com_append_stmt(stmts, node)
 
+        # count __future__ statements
+        i = 0
+        for stmt in stmts:
+            if isinstance(stmt, ast.From) and stmt.modname == '__future__':
+                i += 1
+            else:
+                break
+        stmts[i:i] = ptl_stmts
         return ast.Module(doc, ast.Stmt(stmts))
 
     def funcdef(self, nodelist):
@@ -382,4 +384,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

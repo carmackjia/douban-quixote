@@ -1,6 +1,4 @@
 """quixote.http_request
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/http_request.py $
-$Id$
 
 Provides the HTTPRequest class and related code for parsing HTTP
 requests, such as the FileUpload class.
@@ -22,19 +20,14 @@ copyright and license from the rest of Quixote).
 #
 ##############################################################################
 
-__revision__ = "$Id$"
-
 import re
 import time
 import urlparse, urllib
 from cgi import FieldStorage
 from types import ListType
 
-from quixote import errors
 from quixote.http_response import HTTPResponse
 from quixote.html import html_quote
-from quixote.util import filter_input, convert_unicode_to_utf8_in_json
-from json import loads
 
 
 # Various regexes for parsing specific bits of HTTP, all from RFC 2616.
@@ -45,9 +38,6 @@ from json import loads
 _http_lws_re = re.compile("(\r\n)?[ \t]+")
 _http_list_re = re.compile(r",+")
 _http_encoding_re = re.compile(r"([^;]+)(;q=([\d.]+))?$")
-
-#redirect filter \r\n
-_http_redir_re = re.compile("[\r\n]+")
 
 # These are needed by 'guess_browser_version()', for parsing the
 # "User-Agent" header.
@@ -114,8 +104,7 @@ class HTTPRequest:
         # (most web servers -- well, Apache at least -- simply don't set
         # it in that case).
         if (environ.get('HTTPS', 'off').lower() == 'on' or
-            environ.get('SERVER_PORT_SECURE', '0') != '0' or
-            environ.get('HTTP_X_FORWARDED_PROTO', 'http') == 'https'):
+            environ.get('SERVER_PORT_SECURE', '0') != '0'):
             self.scheme = "https"
         else:
             self.scheme = "http"
@@ -148,17 +137,6 @@ class HTTPRequest:
                 self.form[key] = found
         else:
             self.form[key] = value
-            # anti hash attack:
-            # http://permalink.gmane.org/gmane.comp.security.full-disclosure/83694
-            n = len(self.form)
-            if n % 100 == 0:
-                hash_d = {}
-                for k in self.form:
-                    h = hash(k)
-                    hash_d[h] = hash_d.get(h, 0) + 1
-                m = max(hash_d.values())
-                if m > n / 10 or m > 100 or len(hash_d) < n/3 or n > 50000:
-                    raise errors.RequestError("hash attack")
 
     def process_inputs(self):
         """Process request inputs.
@@ -203,23 +181,8 @@ class HTTPRequest:
     def get_cookie(self, cookie_name, default=None):
         return self.cookies.get(cookie_name, default)
 
-    def _get_form_var(self, var_name, default=None):
-        var = self.form.get(var_name, default)
-        if var and self.get_method() == 'POST' and isinstance(var, basestring):
-            var = filter_input(var)
-        return var
-
     def get_form_var(self, var_name, default=None):
-        var = self._get_form_var(var_name, default)
-        if type(var) is ListType and len(set(var)) == 1:
-            var = var[0]
-        return var
-
-    def get_form_list_var(self, var_name, default=[]):
-        var = self._get_form_var(var_name, default)
-        if type(var) is not ListType:
-            var = [var]
-        return var
+        return self.form.get(var_name, default)
 
     def get_method(self):
         """Returns the HTTP method for this request
@@ -451,11 +414,10 @@ class HTTPRequest:
         # enough to distinguish Mozilla/Netscape, MSIE, Opera, and
         # Konqueror.
 
-        m = _http_product_re.search(ua)
+        m = _http_product_re.match(ua)
         if not m:
-            if ua:
-                import sys
-                sys.stderr.write("couldn't parse User-Agent header: %r\n" % ua)
+            import sys
+            sys.stderr.write("couldn't parse User-Agent header: %r\n" % ua)
             return (None, None)
 
         name, version = m.groups()
@@ -517,43 +479,21 @@ class HTTPRequest:
         not honor the redirect).
         """
         location = urlparse.urljoin(self.get_url(), location)
-        location = _http_redir_re.sub('', location)
         return self.response.redirect(location, permanent)
-
-
-class HTTPJSONRequest(HTTPRequest):
-    def process_inputs(self):
-        self.start_time = time.time()
-        if self.content_type != "application/json":
-            return
-
-        try:
-            length = int(self.environ["CONTENT_LENGTH"])
-            raw_json = self.stdin.read(length)
-            # Since object_hook/object_pairs_hook is only for JSON object, direct convertion on return value is prefered
-            json = convert_unicode_to_utf8_in_json(loads(raw_json))
-        except ValueError:
-            raise errors.QueryError
-
-        self.json = json
-
-        if type(self.json) is dict:
-            for k, v in self.json.iteritems():
-                self.add_form_value(k, v)
 
 
 _qparm_re = re.compile(r'([\0- ]*'
                        r'([^\0- ;,=\"]+)="([^"]*)"'
                        r'([\0- ]*[;,])?[\0- ]*)')
 _parm_re = re.compile(r'([\0- ]*'
-                      r'([^\0- ;,="]+)=([^\0- ;"]*)'
+                      r'([^\0- ;,="]+)=([^\0- ;,"]*)'
                       r'([\0- ]*[;,])?[\0- ]*)')
 
 def parse_cookie(text):
     result = {}
 
     pos = 0
-    while pos < len(text):
+    while 1:
         mq = _qparm_re.match(text, pos)
         m = _parm_re.match(text, pos)
         if mq is not None:
@@ -566,10 +506,6 @@ def parse_cookie(text):
             name = m.group(2)
             value = m.group(3)
             pos = m.end()
-        elif text.find(";", pos) >= 0:
-            # skip the heading ";"
-            pos = text.index(";", pos) + 1
-            continue
         else:
             # this may be an invalid cookie.
             # We'll simply bail without raising an error

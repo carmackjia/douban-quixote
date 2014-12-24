@@ -1,7 +1,4 @@
-"""$URL: svn+ssh://svn/repos/trunk/quixote/form2/widget.py $
-$Id$
-
-Provides the basic web widget classes: Widget itself, plus StringWidget,
+"""Provides the basic web widget classes: Widget itself, plus StringWidget,
 TextWidget, CheckboxWidget, etc.
 """
 

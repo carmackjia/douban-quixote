@@ -3,9 +3,6 @@
 # Provides miscellaneous pages for the Quixote demo (currently
 # just the index page).
 
-__revision__ = "$Id: pages.ptl 25234 2004-09-30 17:36:19Z nascheme $"
-
-
 def _q_index [html] (request):
     print "debug message from the index page"
     package_name = str('.').join(__name__.split(str('.'))[:-1])

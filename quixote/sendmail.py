@@ -1,13 +1,7 @@
 """quixote.sendmail
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/sendmail.py $
-$Id$
 
 Tools for sending mail from Quixote applications.
 """
-
-# created 2001/08/27, Greg Ward (with a long and complicated back-story)
-
-__revision__ = "$Id$"
 
 import re
 from types import ListType, TupleType, StringType

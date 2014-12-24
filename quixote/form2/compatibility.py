@@ -1,7 +1,4 @@
-'''$URL: svn+ssh://svn/repos/trunk/quixote/form2/compatibility.py $
-$Id$
-
-A Form subclass that provides close to the same API as the old form
+'''A Form subclass that provides close to the same API as the old form
 class (useful for transitioning existing forms).
 '''
 

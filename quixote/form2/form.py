@@ -1,7 +1,4 @@
-"""$URL: svn+ssh://svn/repos/trunk/quixote/form2/form.py $
-$Id$
-
-Provides the Form class and related classes.  Forms are a convenient
+"""Provides the Form class and related classes.  Forms are a convenient
 way of building HTML forms that are composed of Widget objects.
 """
 

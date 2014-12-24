@@ -2,9 +2,6 @@
 #
 # Demonstrate the Quixote form class.
 
-__revision__ = "$Id: forms.ptl 25234 2004-09-30 17:36:19Z nascheme $"
-
-
 import time
 from quixote.form import Form
 

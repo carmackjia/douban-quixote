@@ -1,6 +1,4 @@
 """quixote.config
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/config.py $
-$Id$
 
 Quixote configuration information.  This module provides both the
 default configuration values, and some code that Quixote uses for
@@ -11,9 +9,6 @@ source of information about Quixote configuration variables, and editing
 the defaults here is harmless if you're just playing around and don't
 care what happens in the future.
 """
-
-__revision__ = "$Id$"
-
 
 # Note that the default values here are geared towards a production
 # environment, preferring security and performance over verbosity and
@@ -94,15 +89,11 @@ FORM_TOKENS = 0
 # attacks.  It will frustrate mobile laptop users, though.
 CHECK_SESSION_ADDR = 0
 
-# If true, the content of request of which content-type is application/json will be directly unseriliazed into request.json.
-# It can also be accessed through request.form and form-releated interface(such as get_form_var) when its type is JSON object
-SUPPORT_APPLICATION_JSON = 0
-
 # Session-related variables
 # =========================
 
 # Name of the cookie that will hold the session ID string.
-SESSION_COOKIE_NAME = "QX_session"
+SESSION_COOKIE_NAME = "wycl"
 
 # Domain and path to which the session cookie is restricted.  Leaving
 # these undefined is fine.  Quixote does not have a default "domain"
@@ -111,8 +102,8 @@ SESSION_COOKIE_NAME = "QX_session"
 # use your application's root URL (ie. SCRIPT_NAME in a CGI-like
 # environment), meaning the session cookie will be sent to all URLs
 # controlled by your application, but no other.
-SESSION_COOKIE_DOMAIN = None    # eg. ".example.com"
-SESSION_COOKIE_PATH = None      # eg. "/"
+SESSION_COOKIE_DOMAIN = None   # eg. ".example.com"
+SESSION_COOKIE_PATH = "/"      # eg. "/"
 
 
 # Mail-related variables
@@ -211,7 +202,6 @@ class Config:
         'mail_debug_addr',
         'upload_dir',
         'upload_dir_mode',
-        'support_application_json',
         ]
 
 

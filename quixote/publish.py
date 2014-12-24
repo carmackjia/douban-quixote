@@ -1,27 +1,22 @@
+#-*-coding:UTF-8-*-
 """quixote.publish
-$HeadURL: svn+ssh://svn/repos/trunk/quixote/publish.py $
-$Id$
 
 Logic for publishing modules and objects on the Web.
 """
-
-__revision__ = "$Id$"
 
 import sys, os, traceback, cStringIO
 import time, types, socket, re, warnings
 import struct
 try:
     import zlib # for COMPRESS_PAGES option
-    import binascii
 except ImportError:
     pass
-import threading
 
 from quixote import errors
 from quixote.html import htmltext
-from quixote.http_request import HTTPRequest, HTTPJSONRequest, get_content_type
+from quixote.http_request import HTTPRequest, get_content_type
 from quixote.http_response import HTTPResponse, Stream
-from quixote.upload import HTTPUploadRequest, Upload
+from quixote.upload import HTTPUploadRequest
 from quixote.sendmail import sendmail
 
 try:
@@ -35,28 +30,84 @@ def _get_module(name):
     module = sys.modules[name]
     return module
 
+def _LOWU32(i):
+    return i & 0xFFFFFFFFL
+
 # Error message to dispay when DISPLAY_EXCEPTIONS in config file is not
 # true.  Note that SERVER_ADMIN must be fetched from the environment and
 # plugged in here -- we can't do it now because the environment isn't
 # really setup for us yet if running as a FastCGI script.
 INTERNAL_ERROR_MESSAGE = """\
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN"
-        "http://www.w3.org/TR/REC-html40/strict.dtd">
-<html>
-<head><title>Internal Server Error</title></head>
-<body>
-<h1>Internal Server Error</h1>
-<p>An internal error occurred while handling your request.</p>
-
-<p>The server administrator should have been notified of the problem.
-You may wish to contact the server administrator (%s) and inform them of
-the time the error occurred, and anything you might have done to trigger
-the error.</p>
-
-<p>If you are the server administrator, more information may be
-available in either the server's error log or Quixote's error log.</p>
-</body>
-</html>
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"> 
+    <html xmlns="http://www.w3.org/1999/xhtml"> 
+    <head>
+     <title>录取100</title>
+    
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+    <link href="http://zhiyuanbang-base.b0.upaiyun.com/css/packed_985u1.css" rel="stylesheet" type="text/css" />
+    <style type="text/css">
+    	#db-nav-net .bd {width: 68%}
+    </style>
+    </head>
+    
+    <body>
+    
+    <div class="top-nav">
+     <div class="bd">
+      <div class="top-nav-info"><a href='/settings/'>设置</a>&nbsp;&nbsp;<a href='/logout'>退出</a></div>
+      <div class="top-nav-items">
+       <ul>
+            <li class="on"><a href="http://www.luqu100.com/help/">帮助中心</a></li> 
+        </ul>
+       </div>
+      </div>
+    </div>
+    
+     <div id="wrapper">
+    
+    <div id="header">
+    
+      <div class="site-nav" id="db-nav-net">
+       <div class="site-nav-logo">
+        <a href="/">
+         <img src="http://zhiyuanbang-base.b0.upaiyun.com/base/logo/bweb_logo_main.jpg" alt="首页" />
+        </a>
+       </div>
+    
+       <div class="bd">
+        <div class="site-nav-items">
+         <ul><li><a href='/'>首页</a></li></ul>
+        </div>
+       </div>
+    
+     </div>
+    </div>
+    
+    <div id="content">
+    
+       <div class="grid-16-8 clearfix">
+    
+    <div style="margin:100px auto; width:350px;">
+     <img style="float:left;" src="http://zhiyuanbang-base.b0.upaiyun.com/base/icon/error.gif"/>
+     <ul style="margin-left:40px; list-style-type:none; list-style-image:none; list-style-position:outside;">
+      <li style="list-style-type:none; list-style-image:none; list-style-position:outside; font-size:14px; line-height: 32px;">
+      抱歉，您访问的页面可能出问题了，您需要刷新后重新尝试。如果问题依然继续，并且严重影响到了
+您的正常使用，请您<a href="http://www.luqu100.com/help/">联系</a>客服解决。      </li>
+      <li style="list-style-type:none list-style-image:none; list-style-position: outside; color: #666;">&nbsp;</li>
+      <li style="list-style-type:none list-style-image:none; list-style-position: outside; color: #666;">&gt; 
+       <a href="/">返回录取100主页</a>
+     </ul>
+    </div>
+    
+    </div></div>
+    
+    <div id="footer">
+     <span id="icp" class="fleft gray-link">&copy; 2012 luqu100.com, all rights reserved</span>
+     <span class="fright"><a href='http://www.luqu100.com/about/contact'>联系我们</a></div>
+    
+     </div>
+    </body>
+   </html>
 """
 
 class Publisher:
@@ -99,9 +150,11 @@ class Publisher:
 
     def __init__(self, root_namespace, config=None):
         from quixote.config import Config
+        global _publisher
 
-        # if more than one publisher in app, need to set_publisher per request
-        set_publisher(self)
+        if _publisher is not None:
+            raise RuntimeError, "only one instance of Publisher allowed"
+        _publisher = self
 
         if type(root_namespace) is types.StringType:
             self.root_namespace = _get_module(root_namespace)
@@ -134,12 +187,7 @@ class Publisher:
         else:
             self.set_config(config)
 
-        self._local = threading.local()
-
-    @property
-    def _request(self):
-        warnings.warn("use get_request instead of _request")
-        return self.get_request()
+        self._request = None
 
     def configure(self, **kwargs):
         self.config.set_from_dict(kwargs)
@@ -212,17 +260,11 @@ class Publisher:
 
     def create_request(self, stdin, env):
         ctype = get_content_type(env)
-        if ctype == "multipart/form-data" and (
-                    # workaround for safari bug, see ticket #1556
-                    env.get('REQUEST_METHOD') != 'GET'
-                    or env.get('CONTENT_LENGTH', '0') != '0'
-                ):
+        if ctype == "multipart/form-data":
             req = HTTPUploadRequest(stdin, env, content_type=ctype)
             req.set_upload_dir(self.config.upload_dir,
                                self.config.upload_dir_mode)
             return req
-        elif self.config.support_application_json and ctype == "application/json":
-            return HTTPJSONRequest(stdin, env, content_type=ctype)
         else:
             return HTTPRequest(stdin, env, content_type=ctype)
 
@@ -240,26 +282,17 @@ class Publisher:
     def _set_request(self, request):
         """Set the current request object.
         """
-        self._local.request = request
+        self._request = request
 
     def _clear_request(self):
         """Unset the current request object.
         """
-        request = self._local.request
-        if request:
-        # clear upload file
-            for k, v in request.form.items():
-                if isinstance(v, Upload):
-                    try:
-                        os.remove(v.tmp_filename)
-                    except OSError:
-                        pass
-        self._local.request = None
+        self._request = None
 
     def get_request(self):
         """Return the current request object.
         """
-        return self._local.request
+        return self._request
 
     def log_request(self, request):
         """Log a request in the access_log file.
@@ -403,7 +436,7 @@ class Publisher:
     def _generate_internal_error(self, request):
         admin = request.environ.get('SERVER_ADMIN',
                                     "<i>email address unknown</i>")
-        return INTERNAL_ERROR_MESSAGE % admin
+        return INTERNAL_ERROR_MESSAGE
 
 
     def _generate_plaintext_error(self, request, original_response,
@@ -462,6 +495,7 @@ class Publisher:
         object = _traverse_url(self.root_namespace, path, request,
                                self.config.fix_trailing_slash,
                                self.namespace_stack)
+        
 
         # None means no output -- traverse_url() just issued a redirect.
         if object is None:
@@ -472,12 +506,9 @@ class Publisher:
             output = object
 
         # ...or a callable.
-        elif callable(object) or hasattr(object, "__call__"):
+        elif callable(object):
             try:
-                if callable(object):
-                    output = object(request)
-                else:
-                    output = object.__call__(request)
+                output = object(request)
             except SystemExit:
                 output = "SystemExit exception caught, shutting down"
                 self.log(output)
@@ -512,10 +543,11 @@ class Publisher:
         if n > self._GZIP_THRESHOLD and encoding:
             co = zlib.compressobj(6, zlib.DEFLATED, -zlib.MAX_WBITS,
                                   zlib.DEF_MEM_LEVEL, 0)
+            crc = zlib.crc32(output)
             chunks = [self._GZIP_HEADER,
                       co.compress(output),
                       co.flush(),
-                      struct.pack("<ll", binascii.crc32(output), len(output))]
+                      struct.pack("<LL", _LOWU32(crc), _LOWU32(len(output)))]
             output = "".join(chunks)
             #self.log("gzip (original size %d, ratio %.1f)" %
             #           (n, float(n)/len(output)))
@@ -715,43 +747,34 @@ def _traverse_url(root_namespace, path, request, fix_trailing_slash,
     for component in path_components:
         if component == "":
             # "/q/foo/" == "/q/foo/_q_index"
-            if (callable(object) or isstring(object)) and \
-                        request.get_method() == "GET" and fix_trailing_slash:
-                # drop last "/", then redirect
-                if 'REQUEST_URI' in request.environ:
-                    uri = request.environ['REQUEST_URI']
-                    idx = uri.find('?')
-                    new_uri = uri[:idx-1] + uri[idx:] if idx > 0 else uri[:-1]
-                else:
-                    query = request.environ.get('QUERY_STRING', '')
-                    new_uri = request.get_path()[:-1] + (query and "?" + query)
-                return request.redirect(new_uri, permanent=1)
             component = "_q_index"
         object = _get_component(object, component, path, request,
                                namespace_stack)
 
-    if not (isstring(object) or callable(object) or hasattr(object, '__call__')):
+    if not (isstring(object) or callable(object)):
         # We went through all the components of the path and ended up at
         # something which isn't callable, like a module or an instance
         # without a __call__ method.
-        if path[-1] != '/' :
-            _obj = _get_component(object, "_q_index", path, request,
-                               namespace_stack)
-            if (callable(_obj) or isstring(_obj)) and \
-                    request.get_method() == "GET" and fix_trailing_slash:
+        if path[-1] != '/':
+            if not request.form and fix_trailing_slash:
                 # This is for the convenience of users who type in paths.
                 # Repair the path and redirect.  This should not happen for
                 # URLs within the site.
-                if 'REQUEST_URI' in request.environ:
-                    uri = request.environ['REQUEST_URI']
-                    idx = uri.find('?')
-                    new_uri = uri[:idx] + '/' + uri[idx:] if idx > 0 else uri + '/'
-                else:
-                    query = request.environ.get('QUERY_STRING', '')
-                    new_uri = request.get_path() + '/' + (query and "?" + query)
-                return request.redirect(new_uri, permanent=1)
+                request.redirect(request.get_path() + "/", permanent=1)
+                return None
 
-        raise errors.TraversalError(
+            else:
+                # Automatic redirects disabled or there is form data.  If
+                # there is form data then the programmer is using the
+                # wrong path.  A redirect won't work if the form data came
+                # from a POST anyhow.
+                raise errors.TraversalError(
+                    "object is neither callable nor string "
+                    "(missing trailing slash?)",
+                    private_msg=repr(object),
+                    path=path)
+        else:
+            raise errors.TraversalError(
                 "object is neither callable nor string",
                 private_msg=repr(object),
                 path=path)
@@ -815,6 +838,8 @@ def _get_component(container, component, path, request, namespace_stack):
     # Check if component is in _q_exports.  The elements in
     # _q_exports can be strings or 2-tuples mapping external names
     # to internal names.
+
+
     if component in container._q_exports or component == '_q_index':
         internal_name = component
     else:
@@ -827,6 +852,7 @@ def _get_component(container, component, path, request, namespace_stack):
         else:
             internal_name = None
 
+
     if internal_name is None:
         # Component is not in exports list.
         object = None
@@ -837,10 +863,12 @@ def _get_component(container, component, path, request, namespace_stack):
                           "be replaced by _q_lookup()" % type(container))
             object = container._q_getname(request, component)
         if object is None:
-            raise errors.TraversalError(
-                private_msg="object %r has no attribute %r" % (
-                                                    container,
-                                                    component))
+            if hasattr(container, component):
+                msg = ("object %r has attribute %r but it is not in "
+                       "_q_exports" % (container, component))
+            else:
+                msg = "object %r has no attribute %r" % (container, component)
+            raise errors.TraversalError(private_msg=msg)
 
     # From here on, you can assume that the internal_name is not None
     elif hasattr(container, internal_name):
@@ -885,25 +913,12 @@ def _get_component(container, component, path, request, namespace_stack):
 
 
 
-class PublisherProxy(object):
-    def __init__(self):
-        self.local = threading.local()
-
-    def set_publisher(self, publisher):
-        self.local.publisher = publisher
-
-    def __getattr__(self, name):
-        return getattr(self.local.publisher, name)
-
-_publisher = PublisherProxy()
+# Publisher singleton, only one of these per process.
+_publisher = None
 
 def get_publisher():
     global _publisher
     return _publisher
-
-def set_publisher(publisher):
-    global _publisher
-    _publisher.set_publisher(publisher)
 
 def get_request():
     global _publisher
@@ -932,6 +947,14 @@ def get_user():
         return None
     else:
         return session.user
+
+def get_cookie(name, default=None):
+    global _publisher
+    return _publisher.get_request().get_cookie(name, default)
+
+def get_response():
+    global _publisher
+    return _publisher.get_request().response
 
 
 if sys.hexversion >= 0x02020000:    # Python 2.2 or greater

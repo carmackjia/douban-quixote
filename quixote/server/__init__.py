@@ -6,5 +6,3 @@ it easy to run a small application without having to install and
 configure a full-blown Web server such as Apache.
 
 """
-
-__revision__ = "$Id$"
